@@ -55,10 +55,16 @@ A static function is provided to enable building from the command-line in [batch
 
 ```bash
 #Example CMD usage
-"C:\Program Files\Unity\Hub\Editor\2019.3.0f6\Editor\Unity.exe" -quit -batchmode -projectPath Path\To\Project -executeMethod RogerBarton.BuildPipeline.BuildAll -buildPipeline "Assets/Editor/Production Build Pipeline.asset" -logfile unityBuildLog.txt
+"C:\Program Files\Unity\Hub\Editor\2019.3.0f6\Editor\Unity.exe" -quit -batchmode -projectPath 
+Path\To\Project -executeMethod RogerBarton.BuildPipeline.BuildAll 
+-buildPipeline "Assets/Editor/Production Build Pipeline.asset" -logfile unityBuildLog.txt
 #Trigger a Pipeline Group
 Unity.exe ... -executeMethod RogerBarton.BuildPipeline.BuildPipelineGroup -pipelineGroup <groupId>
 ```
+
+## Sample Project
+
+A basic sample project [UnityBuildPipelineSample is available here](https://github.com/rogerbarton/UnityBuildPipelineSample)
 
 ## Known Issues
 
