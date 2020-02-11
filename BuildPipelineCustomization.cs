@@ -11,7 +11,7 @@ namespace RogerBarton
         /// <returns>e.g. win64/myApp.exe</returns>
         public static string GetBuildName(this BuildPipeline pipeline, BuildConfig config)
         {
-            return config.name + "/" + pipeline.appName + config.fileExt;
+            return config.name + "/" + pipeline.appName + "-" + Application.version + config.fileExt;
         }
         
         /// <returns>Name of the folder for the current build iteration of the whole pipeline</returns>

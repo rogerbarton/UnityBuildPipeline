@@ -10,6 +10,7 @@ using System.Reflection;
 using Sirenix.Serialization;
 using UnityEditor.Build.Reporting;
 using UnityEditor.ShortcutManagement;
+using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
 
 namespace RogerBarton
@@ -22,6 +23,7 @@ namespace RogerBarton
     [CreateAssetMenu(menuName = "Build Pipeline")]
     public class BuildPipeline : SerializedScriptableObject
     {
+        [OdinSerialize, HideInInspector]
         private bool initialized;
         private void Awake()
         {
@@ -33,55 +35,13 @@ namespace RogerBarton
             AddBuildSettingsScenes();
         }
 
-        #region Shortcuts
-        [System.Flags]
-        public enum BuildPipelineShortcut
-        {
-            First  = 1 << 1, 
-            Second = 1 << 2,
-            Third  = 1 << 3
-        }
-
+        #region General
+        [TitleGroup("Build Pipeline")]
         [DetailedInfoBox("Use this to produce several builds at once...",
             "Choose the scenes to be compiled and to which platforms. Then Build All.\n" +
             "You can deactivate certain scenes/platforms with the checkbox.\n" +
             "You can assign shortcuts in Edit > Shortcuts > Build, " +
             "these are not uniquely assigned to a specific instance of a build pipeline but more event based.")]
-        [Tooltip("Run this pipeline when the shortcut is triggered"), EnumToggleButtons]
-        public BuildPipelineShortcut executeOnShortcut;
-
-        [Shortcut("Build/Build Pipeline 1"), MenuItem("Tools/Build Pipeline/Build Pipeline 1")]
-        public static void Shortcut1() { ExecuteShortcut(BuildPipelineShortcut.First); }
-        [Shortcut("Build/Build Pipeline 2"), MenuItem("Tools/Build Pipeline/Build Pipeline 2")]
-        public static void Shortcut2() { ExecuteShortcut(BuildPipelineShortcut.Second); }
-        [Shortcut("Build/Build Pipeline 3"), MenuItem("Tools/Build Pipeline/Build Pipeline 3")]
-        public static void Shortcut3() { ExecuteShortcut(BuildPipelineShortcut.Third); }
-
-        /// <summary>
-        /// Finds all BuildPipelines that have this shortcut set and executes them
-        /// </summary>
-        /// <param name="shortcut">Which shortcut was pressed</param>
-        private static void ExecuteShortcut(BuildPipelineShortcut shortcut)
-        {
-            var pipelineGuids = AssetDatabase.FindAssets("t:BuildPipeline");
-            foreach (var guid in pipelineGuids)
-            {
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                var p = AssetDatabase.LoadAssetAtPath<BuildPipeline>(path);
-                if ((p.executeOnShortcut & shortcut) != 0)
-                {
-                    Selection.activeObject = p;
-                    p.BuildAll();
-                    if (cancelledPipeline)
-                        break;
-                }
-            }
-        }
-        #endregion
-
-        
-        #region General
-        [TitleGroup("Build Pipeline")]
         [Tooltip("The name of your executable (no file extension)")]
         public string appName;
 
@@ -242,7 +202,7 @@ namespace RogerBarton
         /// </summary>
         /// <returns>If the operation was cancelled by the user</returns>
         [TitleGroup("Build")]
-        [Button("Build All", ButtonSizes.Large), GUIColor(0.4f, 0.8f, 1)]
+        [Button("Build All", ButtonSizes.Large) , GUIColor(0.4f, 0.8f, 1f)]
         public void BuildAll()
         {
             if (scenes.Count == 0 || buildConfigs.Count == 0)
@@ -280,7 +240,7 @@ namespace RogerBarton
             int i = 0;
             foreach (var config in buildConfigs)
             {
-                log.Write(i + "/" + buildConfigs.Count + (config.enabled ? " Building " : " Inactive ") + config.name);
+                log.WriteLine(i + "/" + buildConfigs.Count + (config.enabled ? " Building " : " Inactive ") + config.name);
                 
                 var report = Build(config, log);
                 if (report != null)
@@ -334,7 +294,7 @@ namespace RogerBarton
                 locationPathName = buildRoot + this.GetBuildName(config)
             };
 
-            log.WriteLine(", " + buildPlayerOptions.locationPathName);
+            log.WriteLine(buildPlayerOptions.locationPathName);
             OnPreBuild?.Invoke(config, buildPlayerOptions.locationPathName, log);
             var report = UnityEditor.BuildPipeline.BuildPlayer(buildPlayerOptions);
             if (report.summary.result == BuildResult.Cancelled)
@@ -350,6 +310,64 @@ namespace RogerBarton
         }
         #endregion
 
+        
+        #region Shortcuts
+        [System.Flags]
+        public enum PipelineGroup
+        {
+            First  = 1 << 1, 
+            Second = 1 << 2,
+            Third  = 1 << 3
+        }
+
+        [Tooltip("Run this pipeline when the group is triggered.\nTrigger groups via Tools > Build Pipeline or Edit > Shortcuts > Build"), EnumToggleButtons]
+        public PipelineGroup pipelineGroup;
+
+        [Shortcut("Build/Build Pipeline 1"), MenuItem("Tools/Build Pipeline/Build Pipeline 1")]
+        public static void Shortcut1() { BuildPipelineGroup(PipelineGroup.First); }
+        [Shortcut("Build/Build Pipeline 2"), MenuItem("Tools/Build Pipeline/Build Pipeline 2")]
+        public static void Shortcut2() { BuildPipelineGroup(PipelineGroup.Second); }
+        [Shortcut("Build/Build Pipeline 3"), MenuItem("Tools/Build Pipeline/Build Pipeline 3")]
+        public static void Shortcut3() { BuildPipelineGroup(PipelineGroup.Third); }
+
+        /// <summary>
+        /// Finds all BuildPipelines that have this shortcut set and executes them
+        /// </summary>
+        /// <param name="group">Which shortcut was pressed</param>
+        private static void BuildPipelineGroup(PipelineGroup group = PipelineGroup.First)
+        {
+            if (Application.isBatchMode) //Read from command line arguments
+            {
+                int value = 0;
+                Console.Out.WriteLine("Reading args now");
+                var args = Environment.GetCommandLineArgs();
+                for (int i = 0; i < args.Length; i++)
+                {
+                    if (args[i] == "-pipelineGroup")
+                        value = int.Parse(args[i + 1]);
+                }
+
+                group = (PipelineGroup) (1 << value);
+                
+                Console.Out.WriteLine("Using BuildPipelineGroup: " + value);
+            }
+            
+            var pipelineGuids = AssetDatabase.FindAssets("t:BuildPipeline");
+            foreach (var guid in pipelineGuids)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var p = AssetDatabase.LoadAssetAtPath<BuildPipeline>(path);
+                if ((p.pipelineGroup & group) != 0)
+                {
+                    Selection.activeObject = p;
+                    p.BuildAll();
+                    if (cancelledPipeline)
+                        break;
+                }
+            }
+        }
+        #endregion
+        
 
         #region Callbacks
         public static bool initializedCallbacks;
@@ -447,7 +465,7 @@ namespace RogerBarton
         /// A static function to run a build pipeline.
         /// This can be used to run a build from the command line in headless mode, potentially on a server.
         /// Example usage start cmd then execute:
-        /// "C:\Program Files\Unity\Hub\Editor\2019.3.0f6\Editor\Unity.exe" -quit -batchmode -projectPath Documents\Unity\Experimental -executeMethod RogerBarton.BuildPipeline.BuildAll -buildPipeline "Assets/Editor/Production Build Pipeline.asset" -logfile unityBuildLog.txt
+        /// "C:\Program Files\Unity\Hub\Editor\2019.3.0f6\Editor\Unity.exe" -quit -batchmode -projectPath Path\To\Project -executeMethod RogerBarton.BuildPipeline.BuildAll -buildPipeline "Assets/Editor/Production Build Pipeline.asset" -logfile unityBuildLog.txt
         /// </summary>
         /// <param name="assetPath">Path to the Build Pipeline ScriptableObject instance to run.
         /// You can copy this from the Project View uri e.g. Assets/BuildPipeline.asset</param>
@@ -457,7 +475,7 @@ namespace RogerBarton
             if (Application.isBatchMode) //Read from command line arguments
             {
                 Console.Out.WriteLine("Reading args now");
-                var args = System.Environment.GetCommandLineArgs();
+                var args = Environment.GetCommandLineArgs();
                 for (int i = 0; i < args.Length; i++)
                 {
                     if (args[i] == "-buildPipeline")
