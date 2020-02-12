@@ -201,7 +201,7 @@ namespace RogerBarton
         /// </summary>
         /// <returns>If the operation was cancelled by the user</returns>
         [TitleGroup("Build")]
-        [Button("Build All", ButtonSizes.Large) , GUIColor(0.4f, 0.8f, 1f)]
+        [Button("Build All", ButtonSizes.Large), DisableIf("@isBuilding")]//, GUIColor(0.4f, 0.8f, 1f)]
         public void BuildAll()
         {
             if (scenes.Count == 0 || buildConfigs.Count == 0)
