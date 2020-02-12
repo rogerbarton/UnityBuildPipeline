@@ -66,8 +66,11 @@ Unity.exe ... -executeMethod RogerBarton.BuildPipeline.BuildPipelineGroup -pipel
 
 A basic sample project [UnityBuildPipelineSample is available here](https://github.com/rogerbarton/UnityBuildPipelineSample)
 
+Tested with Odin Inspector 2.1.9 and Unity 2019.3.0f6, 2019.2.21f1, 2018.4.17f1 (LTS), 2018.3.9f1, *no shortcuts in 2018.x*
+
 ## Known Issues
 
 - Currently Odin will sometimes generate errors relating to drawing the UI. These have no effect and can be ignored while a solution is being found. `InvalidOperationException: Stack empty.` and related
+- 'Try Add Current Build Settings' will fail if the project has never been built before (a build path has to be set)
 
 *Note: The Odin Inspector asset is required*

@@ -1,4 +1,4 @@
-#if UNITY_EDITOR && ODIN_INSPECTOR
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 using System.Diagnostics;
@@ -10,7 +10,6 @@ using System.Reflection;
 using Sirenix.Serialization;
 using UnityEditor.Build.Reporting;
 using UnityEditor.ShortcutManagement;
-using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
 
 namespace RogerBarton
@@ -323,11 +322,20 @@ namespace RogerBarton
         [Tooltip("Run this pipeline when the group is triggered.\nTrigger groups via Tools > Build Pipeline or Edit > Shortcuts > Build"), EnumToggleButtons]
         public PipelineGroup pipelineGroup;
 
-        [Shortcut("Build/Build Pipeline 1"), MenuItem("Tools/Build Pipeline/Build Pipeline 1")]
+        #if UNITY_2019_1_OR_NEWER
+        [Shortcut("Build/Build Pipeline 1")]
+        #endif
+        [MenuItem("Tools/Build Pipeline/Build Pipeline 1")]
         public static void Shortcut1() { BuildPipelineGroup(PipelineGroup.First); }
-        [Shortcut("Build/Build Pipeline 2"), MenuItem("Tools/Build Pipeline/Build Pipeline 2")]
+        #if UNITY_2019_1_OR_NEWER
+        [Shortcut("Build/Build Pipeline 2")]
+        #endif
+        [MenuItem("Tools/Build Pipeline/Build Pipeline 2")]
         public static void Shortcut2() { BuildPipelineGroup(PipelineGroup.Second); }
-        [Shortcut("Build/Build Pipeline 3"), MenuItem("Tools/Build Pipeline/Build Pipeline 3")]
+        #if UNITY_2019_1_OR_NEWER
+        [Shortcut("Build/Build Pipeline 3")]
+        #endif
+        [MenuItem("Tools/Build Pipeline/Build Pipeline 3")]
         public static void Shortcut3() { BuildPipelineGroup(PipelineGroup.Third); }
 
         /// <summary>
